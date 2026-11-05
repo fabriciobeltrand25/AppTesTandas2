@@ -133,7 +133,7 @@ export async function sembrarDatosDemo(usuario: Usuario): Promise<void> {
   }
 }
 
-// ───────────────────────── Nueva tanda ─────────────────────────
+// ───────────────────────── Nueva tanda fabricio ─────────────────────────
 
 export const MIN_PARTICIPANTES = 3;
 export const MAX_PARTICIPANTES = 30;
