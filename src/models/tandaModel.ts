@@ -2,33 +2,17 @@
 import { obtenerDB } from '../database/db';
 import type { Frecuencia } from '../utils/fechas';
 
-export type RecargoTipo = 'ninguno' | 'fijo' | 'porcentaje';
-
-export interface Ahorro {
-  ganado: number;
-}
-
-export interface ProximoCobro {
-  tandaId: number;
-  tandaNombre: string;
-  fecha: string;
-  monto: number;
-  rondaNumero: number;
-}
-
 export interface RondaActual {
   id: number;
   numero: number;
   fecha: string;
   beneficiarioNombre: string;
   beneficiarioTelefono: string;
-  beneficiarioUsuarioId: number | null;
   recolectado: number;
 }
 
 export interface ResumenTanda {
   id: number;
-  organizadorId: number;
   nombre: string;
   cuota: number;
   frecuencia: Frecuencia;
@@ -104,26 +88,6 @@ export async function registrarPago(
   );
 }
 
-export async function totalAhorrado(usuarioId: number): Promise<Ahorro> {
-  return { ganado: await totalRecolectado(usuarioId) };
-}
-
-export async function obtenerProximoCobro(usuarioId: number): Promise<ProximoCobro | null> {
-  const db = await obtenerDB();
-  return db.getFirstAsync<ProximoCobro>(
-    `SELECT t.id AS tandaId, t.nombre AS tandaNombre, r.fecha,
-            t.cuota * (SELECT COUNT(*) FROM participantes WHERE tanda_id = t.id) AS monto,
-            r.numero AS rondaNumero
-       FROM tandas t
-       JOIN rondas r ON r.tanda_id = t.id
-       JOIN participantes p ON p.id = r.beneficiario_id
-      WHERE t.usuario_id = ? AND r.cerrada = 0
-      ORDER BY r.fecha, r.numero
-      LIMIT 1`,
-    [usuarioId]
-  );
-}
-
 export async function cerrarRonda(rondaId: number): Promise<void> {
   const db = await obtenerDB();
   await db.runAsync('UPDATE rondas SET cerrada = 1 WHERE id = ?', [rondaId]);
@@ -145,7 +109,6 @@ export async function totalRecolectado(usuarioId: number): Promise<number> {
 
 interface FilaTanda {
   id: number;
-  organizadorId: number;
   nombre: string;
   cuota: number;
   frecuencia: Frecuencia;
@@ -156,7 +119,7 @@ interface FilaTanda {
 export async function listarResumenPorUsuario(usuarioId: number): Promise<ResumenTanda[]> {
   const db = await obtenerDB();
   const tandas = await db.getAllAsync<FilaTanda>(
-    'SELECT id, usuario_id AS organizadorId, nombre, cuota, frecuencia, estado FROM tandas WHERE usuario_id = ? ORDER BY id',
+    'SELECT id, nombre, cuota, frecuencia, estado FROM tandas WHERE usuario_id = ? ORDER BY id',
     [usuarioId]
   );
 
@@ -171,14 +134,12 @@ export async function listarResumenPorUsuario(usuarioId: number): Promise<Resume
     );
 
     const actual = await db.getFirstAsync<{
-      id: number; numero: number; fecha: string; nombre: string; telefono: string;
-      beneficiarioUsuarioId: number | null; recolectado: number;
+      id: number; numero: number; fecha: string; nombre: string; telefono: string; recolectado: number;
     }>(
       `SELECT r.id, r.numero, r.fecha, p.nombre, p.telefono,
               (SELECT COALESCE(SUM(monto), 0) FROM pagos WHERE ronda_id = r.id) AS recolectado
          FROM rondas r
          JOIN participantes p ON p.id = r.beneficiario_id
-         LEFT JOIN usuarios u ON u.telefono = p.telefono
         WHERE r.tanda_id = ? AND r.cerrada = 0
         ORDER BY r.numero
         LIMIT 1`,
@@ -197,7 +158,6 @@ export async function listarResumenPorUsuario(usuarioId: number): Promise<Resume
             fecha: actual.fecha,
             beneficiarioNombre: actual.nombre,
             beneficiarioTelefono: actual.telefono,
-            beneficiarioUsuarioId: actual.beneficiarioUsuarioId,
             recolectado: actual.recolectado,
           }
         : null,

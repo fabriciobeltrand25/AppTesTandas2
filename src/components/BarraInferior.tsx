@@ -1,7 +1,12 @@
-/** Barra de navegación inferior (Inicio · Mis Tandas · Calendario · Avisos · Perfil). */
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+/**
+ * Barra de navegación inferior (Inicio · Mis Tandas · Calendario · Avisos · Perfil).
+ * Se encarga sola de navegar: solo dile cuál sección está activa.
+ */
+import { useRouter } from 'expo-router';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tema } from '../tema';
+import { useConfirmarSalida } from '../utils/useConfirmarSalida';
 import { Icono, NombreIcono } from './Icono';
 
 export type ClaveSeccion = 'inicio' | 'tandas' | 'calendario' | 'avisos' | 'perfil';
@@ -14,13 +19,31 @@ const SECCIONES: { clave: ClaveSeccion; etiqueta: string; icono: NombreIcono; ic
   { clave: 'perfil', etiqueta: 'Perfil', icono: 'person-outline', iconoActivo: 'person' },
 ];
 
-interface Props {
-  activa: ClaveSeccion;
-  onSeleccionar: (clave: ClaveSeccion) => void;
-}
-
-export function BarraInferior({ activa, onSeleccionar }: Props) {
+export function BarraInferior({ activa }: { activa: ClaveSeccion }) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const confirmarSalida = useConfirmarSalida();
+
+  const seleccionar = (clave: ClaveSeccion) => {
+    if (clave === activa) return;
+    switch (clave) {
+      case 'inicio':
+        router.replace('/dashboard' as never);
+        break;
+      case 'tandas':
+        router.replace('/mis-tandas' as never);
+        break;
+      case 'perfil':
+        confirmarSalida();
+        break;
+      default:
+        Alert.alert(
+          SECCIONES.find((s) => s.clave === clave)?.etiqueta ?? '',
+          'Esta pantalla estará disponible muy pronto.'
+        );
+    }
+  };
+
   return (
     <View style={[styles.barra, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {SECCIONES.map((s) => {
@@ -28,7 +51,7 @@ export function BarraInferior({ activa, onSeleccionar }: Props) {
         return (
           <Pressable
             key={s.clave}
-            onPress={() => onSeleccionar(s.clave)}
+            onPress={() => seleccionar(s.clave)}
             style={styles.item}
             accessibilityRole="tab"
             accessibilityState={{ selected: esActiva }}

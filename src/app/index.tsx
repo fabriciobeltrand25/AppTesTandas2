@@ -66,9 +66,11 @@ export default function LoginScreen() {
         {errores.general ? <Text style={styles.errorGeneral}>{errores.general}</Text> : null}
 
         <View style={styles.filaOpciones}>
-          <CasillaAcepto marcada={recordar} onCambio={setRecordar}>
-            Recordar sesión
-          </CasillaAcepto>
+          <View style={styles.recordar}>
+            <CasillaAcepto marcada={recordar} onCambio={setRecordar}>
+              Recordar sesión
+            </CasillaAcepto>
+          </View>
           <Pressable onPress={() => router.push('/recuperar' as never)} hitSlop={8}>
             <Text style={styles.enlace}>¿Olvidaste tu contraseña?</Text>
           </Pressable>
@@ -94,7 +96,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  marca: { alignItems: 'center', marginBottom: tema.espacio.lg },
+  marca: { alignItems: 'center', marginBottom: tema.espacio.md },
   logoExterior: {
     width: 80, height: 80, borderRadius: 22, justifyContent: 'center', alignItems: 'center',
     backgroundColor: tema.colores.brilloVerde, borderWidth: 1, borderColor: tema.colores.secundarioContenedor,
@@ -111,6 +113,7 @@ const styles = StyleSheet.create({
   formulario: { marginTop: tema.espacio.md },
   errorGeneral: { ...tema.tipografia.etiqueta, color: tema.colores.error, marginBottom: 8 },
   filaOpciones: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  recordar: { flex: 1 },
   enlace: { ...tema.tipografia.etiqueta, fontWeight: '700', color: tema.colores.primario },
   boton: { marginTop: tema.espacio.md },
   pie: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: tema.espacio.lg },

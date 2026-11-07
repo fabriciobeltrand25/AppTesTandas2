@@ -22,12 +22,6 @@ export function hoyISO(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-export function esFechaISOValida(iso: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
-  const fecha = desdeISO(iso);
-  return aISO(fecha) === iso;
-}
-
 /**
  * Suma k periodos a una fecha. k puede ser negativo.
  *  - semanal   = 7 días
@@ -53,4 +47,15 @@ export function generarCalendario(inicioISO: string, frecuencia: Frecuencia, n: 
     numero: i + 1,
     fecha: sumarPeriodos(inicioISO, frecuencia, i),
   }));
+}
+
+/** Date (hora local, como la entrega el selector de fecha) -> "YYYY-MM-DD" */
+export function aISOLocal(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** "YYYY-MM-DD" -> Date a medianoche local (para el selector de fecha) */
+export function desdeISOLocal(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }

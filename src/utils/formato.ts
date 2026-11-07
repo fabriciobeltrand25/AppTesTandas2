@@ -43,10 +43,6 @@ export function soloDigitos(texto: string): string {
   return texto.replace(/\D/g, '');
 }
 
-export function redondear2(valor: number): number {
-  return Math.round((valor + Number.EPSILON) * 100) / 100;
-}
-
 /** "98765432" -> "9876-5432" (mientras se escribe también funciona) */
 export function formatearTelefono(digitos: string): string {
   const d = soloDigitos(digitos).slice(0, 8);
@@ -60,4 +56,16 @@ export function etiquetaFrecuencia(f: string): string {
     case 'mensual': return 'Mensual';
     default: return f;
   }
+}
+
+/** "2026-11-01" -> "1 de Noviembre, 2026" */
+export function fechaCompleta(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d} de ${MESES_LARGOS[m - 1]}, ${y}`;
+}
+
+/** "2027-03-15" -> "Marzo 2027" */
+export function mesAnio(iso: string): string {
+  const [y, m] = iso.split('-').map(Number);
+  return `${MESES_LARGOS[m - 1]} ${y}`;
 }

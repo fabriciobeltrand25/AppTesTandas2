@@ -53,7 +53,7 @@ export function ResumenAhorro({ total, tandasActivas, proximoCobro, onEstadistic
           </View>
           <View style={styles.cobroDerecha}>
             <Text style={styles.cobroMonto}>{formatearLempiras(proximoCobro.monto)}</Text>
-            <Text style={styles.cobroRonda}>Ronda #{proximoCobro.rondaNumero}</Text>
+            <Text style={styles.cobroRonda}>Ronda #{proximoCobro.ronda}</Text>
           </View>
         </View>
       ) : null}

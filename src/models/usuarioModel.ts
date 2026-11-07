@@ -48,20 +48,6 @@ export async function buscarPorId(id: number): Promise<Usuario | null> {
   );
 }
 
-export async function buscarIdPorTelefono(telefono: string): Promise<number | null> {
-  const usuario = await buscarPorTelefono(telefono);
-  return usuario?.id ?? null;
-}
-
-export async function listarUsuarios(): Promise<Usuario[]> {
-  const db = await obtenerDB();
-  return db.getAllAsync<Usuario>('SELECT id, nombre, telefono, correo FROM usuarios ORDER BY nombre');
-}
-
-export async function listarContactos(_usuarioId: number): Promise<Usuario[]> {
-  return [];
-}
-
 export async function actualizarPassword(id: number, sal: string, hash: string): Promise<void> {
   const db = await obtenerDB();
   await db.runAsync('UPDATE usuarios SET password_sal = ?, password_hash = ? WHERE id = ?', [sal, hash, id]);

@@ -1,27 +1,25 @@
 /** Lista de todas las tandas del usuario (ruta "/mis-tandas"). */
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BarraInferior, type ClaveSeccion } from '../components/BarraInferior';
+import { BarraInferior } from '../components/BarraInferior';
 import { Boton } from '../components/Boton';
 import { Icono } from '../components/Icono';
 import { TarjetaTanda } from '../components/TarjetaTanda';
 import { useSesion } from '../context/SesionContext';
-import { obtenerResumenDashboard, type TandaConDetalle } from '../controllers/tandaController';
+import { obtenerResumenDashboard, type TandaVista } from '../controllers/tandaController';
 import { tema } from '../tema';
-
 
 export default function MisTandasScreen() {
   const router = useRouter();
   const { usuario } = useSesion();
-  const [tandas, setTandas] = useState<TandaConDetalle[]>([]);
+  const [tandas, setTandas] = useState<TandaVista[] | null>(null);
   const [refrescando, setRefrescando] = useState(false);
 
   const cargar = useCallback(async () => {
     if (!usuario) return;
-    const resumen = await obtenerResumenDashboard(usuario);
-    setTandas(resumen.tandas);
+    setTandas((await obtenerResumenDashboard(usuario)).tandas);
   }, [usuario]);
 
   useFocusEffect(
@@ -37,12 +35,7 @@ export default function MisTandasScreen() {
   };
 
   const nueva = () => router.push('/nueva-tanda' as never);
-
-  const alSeleccionar = (clave: ClaveSeccion) => {
-    if (clave === 'tandas') return;
-    if (clave === 'inicio') return router.replace('/dashboard' as never);
-    if (clave === 'perfil') return router.replace('/dashboard' as never);
-  };
+  const lista = tandas ?? [];
 
   return (
     <SafeAreaView style={styles.raiz} edges={['top']}>
@@ -50,7 +43,7 @@ export default function MisTandasScreen() {
         <View style={styles.flex}>
           <Text style={styles.titulo}>Mis Tandas</Text>
           <Text style={styles.subtitulo}>
-            {tandas.length === 0 ? 'Aún no has creado tandas' : `${tandas.length} ${tandas.length === 1 ? 'tanda' : 'tandas'} en total`}
+            {lista.length === 0 ? 'Aún no has creado tandas' : `${lista.length} ${lista.length === 1 ? 'tanda' : 'tandas'} en total`}
           </Text>
         </View>
         <Pressable onPress={nueva} style={styles.agregar} accessibilityLabel="Nueva tanda">
@@ -63,7 +56,7 @@ export default function MisTandasScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} tintColor={tema.colores.primario} />}
       >
-        {tandas.length === 0 ? (
+        {lista.length === 0 ? (
           <View style={[styles.vacio, tema.sombras.nivel1]}>
             <View style={styles.vacioIcono}>
               <Icono name="people-outline" size={32} color={tema.colores.primario} />
@@ -75,19 +68,17 @@ export default function MisTandasScreen() {
             <Boton titulo="Nueva Tanda" iconoIzquierda="add" onPress={nueva} estilo={styles.vacioBoton} />
           </View>
         ) : (
-          <View style={styles.lista}>
-            {tandas.map((t) => (
-              <TarjetaTanda
-                key={t.id}
-                tanda={t}
-                onPress={() => {}}
-              />
-            ))}
-          </View>
+          lista.map((t) => (
+            <TarjetaTanda
+              key={t.id}
+              tanda={t}
+              onPress={() => Alert.alert(t.nombre, 'El detalle de la ronda estará disponible muy pronto.')}
+            />
+          ))
         )}
       </ScrollView>
 
-      <BarraInferior activa="tandas" onSeleccionar={alSeleccionar} />
+      <BarraInferior activa="tandas" />
     </SafeAreaView>
   );
 }
@@ -107,7 +98,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   contenido: { padding: tema.espacio.md, gap: tema.espacio.md, paddingBottom: tema.espacio.xl },
-  lista: { gap: tema.espacio.md },
   vacio: {
     alignItems: 'center', padding: tema.espacio.lg, borderRadius: tema.radio.tarjeta,
     backgroundColor: tema.colores.superficie, borderWidth: 1, borderColor: tema.colores.bordeSuave,

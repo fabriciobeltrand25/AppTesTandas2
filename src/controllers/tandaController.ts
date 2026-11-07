@@ -5,72 +5,65 @@ import {
   cerrarRonda,
   crearTandaCompleta,
   listarResumenPorUsuario,
-  obtenerProximoCobro,
   registrarPago,
-  totalAhorrado,
   totalRecolectado,
-  type Ahorro,
-  type RecargoTipo,
   type ResumenTanda,
 } from '../models/tandaModel';
-import {
-  buscarIdPorTelefono,
-  buscarPorId,
-  listarContactos,
-  listarUsuarios,
-  type Usuario,
-} from '../models/usuarioModel';
-import { esFechaISOValida, generarCalendario, hoyISO, sumarPeriodos, type Frecuencia } from '../utils/fechas';
-import { redondear2, soloDigitos } from '../utils/formato';
-
-export interface ProximoCobro {
-  tandaId: number;
-  tandaNombre: string;
-  fecha: string;
-  monto: number;
-  rondaNumero: number;
-}
+import type { Usuario } from '../models/usuarioModel';
+import { generarCalendario, hoyISO, sumarPeriodos, type Frecuencia } from '../utils/fechas';
+import { soloDigitos } from '../utils/formato';
 
 export interface TandaVista extends ResumenTanda {
-  esOrganizador: boolean;
+  /** true si el usuario es quien cobra en la ronda actual */
   esMiTurno: boolean;
+  /** cuota × participantes */
   montoARecibir: number;
+  /** 0 a 100 */
   porcentaje: number;
 }
 
-export type TandaConDetalle = TandaVista;
+export interface ProximoCobro {
+  fecha: string;
+  monto: number;
+  ronda: number;
+  tandaNombre: string;
+}
 
 export interface ResumenDashboard {
-  ahorro: Ahorro;
   totalRecolectado: number;
-  totalCobrado: number;
   tandas: TandaVista[];
   proximoCobro: ProximoCobro | null;
-  totalRecolectadoGeneral?: number;
 }
 
 export async function obtenerResumenDashboard(usuario: Usuario): Promise<ResumenDashboard> {
-  const [tandas, recolectado, ahorro, proximoCobroCrudo] = await Promise.all([
+  const [tandas, total] = await Promise.all([
     listarResumenPorUsuario(usuario.id),
     totalRecolectado(usuario.id),
-    totalAhorrado(usuario.id),
-    obtenerProximoCobro(usuario.id).catch(() => null),
   ]);
 
   const vistas: TandaVista[] = tandas.map((t) => ({
     ...t,
-    esOrganizador: t.organizadorId === usuario.id,
-    esMiTurno: !!t.rondaActual && t.rondaActual.beneficiarioUsuarioId === usuario.id,
+    esMiTurno: t.rondaActual?.beneficiarioTelefono === usuario.telefono,
     montoARecibir: t.cuota * t.participantesTotal,
     porcentaje: t.totalRondas ? Math.round((t.rondasCerradas / t.totalRondas) * 100) : 0,
   }));
 
+  // El próximo cobro es la ronda abierta con la fecha más cercana.
+  const conRonda = vistas.filter((t) => t.rondaActual);
+  conRonda.sort((a, b) => a.rondaActual!.fecha.localeCompare(b.rondaActual!.fecha));
+  const primera = conRonda[0];
+
   return {
-    ahorro,
-    totalRecolectado: recolectado,
-    totalCobrado: ahorro.ganado,
+    totalRecolectado: total,
     tandas: vistas,
-    proximoCobro: proximoCobroCrudo as ProximoCobro | null,
+    proximoCobro: primera
+      ? {
+          fecha: primera.rondaActual!.fecha,
+          monto: primera.montoARecibir,
+          ronda: primera.rondaActual!.numero,
+          tandaNombre: primera.nombre,
+        }
+      : null,
   };
 }
 
@@ -90,6 +83,7 @@ interface Demo {
   conmigo: boolean;
 }
 
+/** Crea 3 tandas de ejemplo para ver cómo luce el dashboard con datos. */
 export async function sembrarDatosDemo(usuario: Usuario): Promise<void> {
   const demos: Demo[] = [
     { nombre: 'Cuchubal Familia Pérez', cuota: 500, frecuencia: 'quincenal', participantes: 10, rondaActual: 4, conmigo: false },
@@ -102,11 +96,10 @@ export async function sembrarDatosDemo(usuario: Usuario): Promise<void> {
     const inicio = sumarPeriodos(hoy, demo.frecuencia, -(demo.rondaActual - 1));
     const gente = Array.from({ length: demo.participantes }, (_, i) => ({
       nombre: NOMBRES[i % NOMBRES.length],
-      telefono: `9${String(1000000 + i + demo.participantes).slice(0, 7)}`,
-      usuarioId: null as number | null,
+      telefono: `9${String(1000000 + i * 137 + demo.participantes).slice(0, 7)}`,
     }));
     if (demo.conmigo) {
-      gente[demo.rondaActual - 1] = { nombre: usuario.nombre, telefono: usuario.telefono, usuarioId: usuario.id };
+      gente[demo.rondaActual - 1] = { nombre: usuario.nombre, telefono: usuario.telefono };
     }
 
     const tanda = await crearTandaCompleta({
@@ -133,7 +126,7 @@ export async function sembrarDatosDemo(usuario: Usuario): Promise<void> {
   }
 }
 
-// ───────────────────────── Nueva tanda fabricio ─────────────────────────
+// ───────────────────────── Nueva tanda ─────────────────────────
 
 export const MIN_PARTICIPANTES = 3;
 export const MAX_PARTICIPANTES = 30;
@@ -141,31 +134,29 @@ const CUOTA_MAXIMA = 1_000_000;
 
 export interface ParticipanteForm {
   nombre: string;
-  telefono: string;
-  usuarioId?: number | null;
+  telefono: string; // 8 dígitos
 }
 
 export interface DatosNuevaTanda {
   nombre: string;
-  cuota: string | number;
+  cuota: string; // texto tal como lo escribe el usuario
   frecuencia: Frecuencia;
-  fechaInicio: string;
-  cantidad?: number;
-  recargoTipo?: RecargoTipo;
-  recargoValor?: string | number;
-  participantes?: ParticipanteForm[];
+  fechaInicio: string; // YYYY-MM-DD
+  cantidad: number;
+  /** Ya en el orden final: el primero cobra en la ronda 1, etc. */
+  participantes: ParticipanteForm[];
 }
 
 export type ResultadoTanda =
   | { ok: true; tandaId: number }
   | { ok: false; errores: Record<string, string> };
 
-export function aNumero(texto: string | number): number {
-  if (typeof texto === 'number') return Number.isFinite(texto) ? texto : 0;
+export function aNumero(texto: string): number {
   const n = Number(texto.replace(',', '.'));
   return Number.isFinite(n) ? n : 0;
 }
 
+/** Baraja una lista (Fisher-Yates) sin modificar la original. */
 export function sortear<T>(lista: T[]): T[] {
   const copia = [...lista];
   for (let i = copia.length - 1; i > 0; i--) {
@@ -175,6 +166,7 @@ export function sortear<T>(lista: T[]): T[] {
   return copia;
 }
 
+/** Cálculos del "Resumen proyectado" mientras se llena el formulario. */
 export function calcularProyeccion(cuota: number, frecuencia: Frecuencia, cantidad: number, fechaInicio: string) {
   const duracion =
     frecuencia === 'semanal'
@@ -191,6 +183,7 @@ export function calcularProyeccion(cuota: number, frecuencia: Frecuencia, cantid
   };
 }
 
+/** Valida un participante nuevo. Devuelve el mensaje de error o null si está bien. */
 export function validarParticipante(
   nombre: string,
   telefono: string,
@@ -203,93 +196,35 @@ export function validarParticipante(
   return null;
 }
 
-export async function listarUsuariosParaElegir(): Promise<Usuario[]> {
-  return listarUsuarios();
-}
-
-export interface OpcionParticipante {
-  nombre: string;
-  telefono: string;
-  usuarioId: number | null;
-  tipo: 'cuenta' | 'contacto';
-}
-
-export async function listarOpcionesParticipantes(usuario: Usuario): Promise<OpcionParticipante[]> {
-  const [cuentas, contactos] = await Promise.all([listarUsuarios(), listarContactos(usuario.id)]);
-  return [
-    ...cuentas.map((u): OpcionParticipante => ({ nombre: u.nombre, telefono: u.telefono, usuarioId: u.id, tipo: 'cuenta' })),
-    ...contactos.map((c): OpcionParticipante => ({ nombre: c.nombre, telefono: c.telefono, usuarioId: null, tipo: 'contacto' })),
-  ];
-}
-
-const FRECUENCIAS: Frecuencia[] = ['semanal', 'quincenal', 'mensual'];
-
-export async function crearTanda(usuarioIdOrUser: number | Usuario, d: DatosNuevaTanda): Promise<ResultadoTanda> {
-  const usuarioId = typeof usuarioIdOrUser === 'object' ? usuarioIdOrUser.id : usuarioIdOrUser;
-  
-  const cuotaNum = typeof d.cuota === 'number' ? d.cuota : aNumero(d.cuota);
-  const frecuencia = d.frecuencia || 'quincenal';
-  const fechaInicio = d.fechaInicio || hoyISO();
-  const participantesForm = d.participantes || [];
-
+export async function crearTanda(usuario: Usuario, d: DatosNuevaTanda): Promise<ResultadoTanda> {
   const errores: Record<string, string> = {};
-  const nombre = d.nombre.trim();
+  const cuota = aNumero(d.cuota);
 
-  if (nombre.length < 3) errores.nombre = 'Escribe un nombre para la tanda';
-  else if (nombre.length > 40) errores.nombre = 'El nombre es demasiado largo (máximo 40)';
-
-  if (!Number.isFinite(cuotaNum) || cuotaNum <= 0) errores.cuota = 'Ingresa una cuota válida mayor a cero';
-  else if (cuotaNum > CUOTA_MAXIMA) errores.cuota = 'El monto es demasiado alto';
-
-  if (!FRECUENCIAS.includes(frecuencia)) errores.frecuencia = 'Elige semanal, quincenal o mensual';
-
-  if (!esFechaISOValida(fechaInicio)) errores.fecha = 'La fecha de inicio no es válida';
-  else if (fechaInicio < hoyISO()) errores.fecha = 'La fecha no puede ser anterior a hoy';
-
-  let participantesFinales = participantesForm;
-  if (participantesFinales.length === 0) {
-    participantesFinales = [
-      { nombre: 'Participante 1', telefono: '90000001', usuarioId: null },
-      { nombre: 'Participante 2', telefono: '90000002', usuarioId: null },
-      { nombre: 'Participante 3', telefono: '90000003', usuarioId: null },
-    ];
+  if (d.nombre.trim().length < 3) errores.nombre = 'Escribe un nombre para la tanda';
+  if (cuota <= 0) errores.cuota = 'Ingresa el monto de la cuota';
+  else if (cuota > CUOTA_MAXIMA) errores.cuota = 'El monto es demasiado alto';
+  if (d.fechaInicio < hoyISO()) errores.fecha = 'La fecha no puede ser anterior a hoy';
+  if (d.cantidad < MIN_PARTICIPANTES || d.cantidad > MAX_PARTICIPANTES) {
+    errores.cantidad = `Debe haber entre ${MIN_PARTICIPANTES} y ${MAX_PARTICIPANTES} participantes`;
   }
-
-  if (Object.keys(errores).length) {
-    return { ok: false, errores };
+  if (!errores.cantidad && d.participantes.length !== d.cantidad) {
+    const faltan = d.cantidad - d.participantes.length;
+    errores.participantes =
+      faltan > 0
+        ? `Faltan ${faltan} participante${faltan === 1 ? '' : 's'} por registrar`
+        : `Sobran ${-faltan} participante${faltan === -1 ? '' : 's'}`;
   }
+  if (Object.keys(errores).length) return { ok: false, errores };
 
-  const participantes = [];
-  for (const p of participantesFinales) {
-    let uId = p.usuarioId ?? null;
-    let nombreP = p.nombre.trim();
-    let telefono = soloDigitos(p.telefono);
-    if (uId !== null) {
-      const cuenta = await buscarPorId(uId);
-      if (cuenta) {
-        nombreP = cuenta.nombre;
-        telefono = cuenta.telefono;
-      } else {
-        uId = null;
-      }
-    } else {
-      uId = await buscarIdPorTelefono(telefono);
-    }
-    participantes.push({ nombre: nombreP, telefono, usuarioId: uId });
-  }
-
-  try {
-    const creada = await crearTandaCompleta({
-      usuarioId,
-      nombre,
-      cuota: redondear2(cuotaNum),
-      frecuencia,
-      fechaInicio,
-      participantes,
-      calendario: generarCalendario(fechaInicio, frecuencia, participantes.length),
-    });
-    return { ok: true, tandaId: creada.tandaId };
-  } catch {
-    return { ok: false, errores: { general: 'No se pudo guardar la tanda. Revisa los datos e intenta de nuevo.' } };
-  }
+  // Una ronda por participante: cada persona cobra una sola vez.
+  const creada = await crearTandaCompleta({
+    usuarioId: usuario.id,
+    nombre: d.nombre.trim(),
+    cuota,
+    frecuencia: d.frecuencia,
+    fechaInicio: d.fechaInicio,
+    participantes: d.participantes.map((p) => ({ nombre: p.nombre.trim(), telefono: p.telefono })),
+    calendario: generarCalendario(d.fechaInicio, d.frecuencia, d.participantes.length),
+  });
+  return { ok: true, tandaId: creada.tandaId };
 }

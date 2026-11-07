@@ -7,7 +7,7 @@ import { SesionProvider, useSesion } from '../context/SesionContext';
 import { tema } from '../tema';
 
 /** Rutas que solo se pueden ver con la sesión iniciada. */
-const RUTAS_PRIVADAS = ['dashboard'];
+const RUTAS_PRIVADAS = ['dashboard', 'mis-tandas', 'nueva-tanda'];
 
 function Navegacion() {
   const { usuario, cargando } = useSesion();
@@ -38,6 +38,8 @@ function Navegacion() {
         <Stack.Screen name="recuperar" />
         {/* Cliente: sin gesto de "atrás" para no volver al login con la sesión abierta */}
         <Stack.Screen name="dashboard" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="mis-tandas" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="nueva-tanda" options={{ animation: 'slide_from_bottom' }} />
       </Stack>
 
       {cargando && (
@@ -61,7 +63,7 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   cargando: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: tema.colores.fondo,
     justifyContent: 'center',
     alignItems: 'center',

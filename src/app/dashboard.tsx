@@ -3,7 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BarraInferior, type ClaveSeccion } from '../components/BarraInferior';
+import { BarraInferior } from '../components/BarraInferior';
 import { Boton } from '../components/Boton';
 import { Icono } from '../components/Icono';
 import { ResumenAhorro } from '../components/ResumenAhorro';
@@ -16,13 +16,15 @@ import {
 } from '../controllers/tandaController';
 import { tema } from '../tema';
 import { iniciales, primerNombre } from '../utils/formato';
+import { useConfirmarSalida } from '../utils/useConfirmarSalida';
 
 const proximamente = (nombre: string) =>
   Alert.alert(nombre, 'Esta pantalla estará disponible muy pronto.');
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { usuario, salir } = useSesion();
+  const { usuario } = useSesion();
+  const confirmarSalida = useConfirmarSalida();
   const [datos, setDatos] = useState<ResumenDashboard | null>(null);
   const [refrescando, setRefrescando] = useState(false);
 
@@ -44,24 +46,14 @@ export default function DashboardScreen() {
     setRefrescando(false);
   };
 
-  const confirmarSalida = () =>
-    Alert.alert('Cerrar sesión', '¿Seguro que quieres salir?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Cerrar sesión', style: 'destructive', onPress: () => salir() },
-    ]);
-
   const cargarEjemplos = async () => {
     if (!usuario) return;
     await sembrarDatosDemo(usuario);
     await cargar();
   };
 
-  const alSeleccionar = (clave: ClaveSeccion) => {
-    if (clave === 'inicio') return;
-    if (clave === 'tandas') return router.push('/mis-tandas' as never);
-    if (clave === 'perfil') return confirmarSalida();
-    proximamente({ calendario: 'Calendario', avisos: 'Avisos' }[clave] || 'Sección');
-  };
+  const irANuevaTanda = () => router.push('/nueva-tanda' as never);
+  const irAMisTandas = () => router.replace('/mis-tandas' as never);
 
   if (!usuario) return null;
   const tandas = datos?.tandas ?? [];
@@ -103,7 +95,7 @@ export default function DashboardScreen() {
                 <Text style={styles.contadorTexto}>{tandas.length}</Text>
               </View>
             </View>
-            <Pressable onPress={() => router.push('/mis-tandas' as never)} style={styles.verTodas} hitSlop={8}>
+            <Pressable onPress={irAMisTandas} style={styles.verTodas} hitSlop={8}>
               <Text style={styles.verTodasTexto}>Ver todas</Text>
               <Icono name="chevron-forward" size={16} color={tema.colores.primario} />
             </Pressable>
@@ -148,7 +140,7 @@ export default function DashboardScreen() {
         </ScrollView>
 
         <Pressable
-          onPress={() => router.push('/nueva-tanda' as never)}
+          onPress={irANuevaTanda}
           style={({ pressed }) => [styles.fab, tema.sombras.nivel2, pressed && { opacity: 0.9 }]}
           accessibilityRole="button"
         >
@@ -157,7 +149,7 @@ export default function DashboardScreen() {
         </Pressable>
       </View>
 
-      <BarraInferior activa="inicio" onSeleccionar={alSeleccionar} />
+      <BarraInferior activa="inicio" />
     </SafeAreaView>
   );
 }
