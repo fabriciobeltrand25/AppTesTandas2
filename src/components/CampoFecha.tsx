@@ -1,7 +1,8 @@
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { aISOLocal, desdeISOLocal } from '../utils/fechas';
 import { fechaCompleta } from '../utils/formato';
 import { Icono } from './Icono';
@@ -13,10 +14,14 @@ interface Props {
   onCambio: (iso: string) => void;
   /** YYYY-MM-DD: no se puede elegir antes de esta fecha */
   minimo?: string;
+  /** YYYY-MM-DD: no se puede elegir después de esta fecha */
+  maximo?: string;
   error?: string;
 }
 
-export function CampoFecha({ etiqueta, valor, onCambio, minimo, error }: Props) {
+export function CampoFecha({ etiqueta, valor, onCambio, minimo, maximo, error }: Props) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const [abierto, setAbierto] = useState(false);
 
   const alElegir = (evento: DateTimePickerEvent, fecha?: Date) => {
@@ -44,6 +49,7 @@ export function CampoFecha({ etiqueta, valor, onCambio, minimo, error }: Props) 
           mode="date"
           display={Platform.OS === 'ios' ? 'inline' : 'default'}
           minimumDate={minimo ? desdeISOLocal(minimo) : undefined}
+          maximumDate={maximo ? desdeISOLocal(maximo) : undefined}
           onChange={alElegir}
           accentColor={tema.colores.primario}
         />
@@ -52,7 +58,7 @@ export function CampoFecha({ etiqueta, valor, onCambio, minimo, error }: Props) 
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   contenedor: { marginBottom: tema.espacio.md },
   etiqueta: { ...tema.tipografia.etiqueta, color: tema.colores.texto, marginBottom: 6 },
   campo: {

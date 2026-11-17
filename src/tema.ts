@@ -6,17 +6,28 @@
  */
 import { Platform, TextStyle, ViewStyle } from 'react-native';
 
-export const colores = {
+/**
+ * PALETAS (claro y oscuro). Mismos nombres en las dos: así cada pantalla se adapta sola.
+ *
+ * Ojo con estos pares:
+ *  - primario = verde de ACENTO para texto, iconos y bordes (en oscuro se aclara para que se lea).
+ *  - relleno  = verde de FONDO de botones, avatares y chips con texto blanco (igual en los dos modos).
+ *  - menta    = verde claro fijo para textos sobre la tarjeta verde del Inicio.
+ */
+const paletaClara = {
   // Marca
   primario: '#006948',
+  relleno: '#006948',
   primarioContenedor: '#00855d',
   sobrePrimario: '#ffffff',
   secundarioContenedor: '#6cf8bb',
   sobreSecundarioContenedor: '#00714d',
   primarioClaro: '#68dba9',
+  menta: '#6cf8bb',
 
   // Urgencia / alertas
   terciario: '#994100',
+  terciarioRelleno: '#994100',
   terciarioContenedor: '#c05400',
   naranja: '#f97316',
   error: '#ba1a1a',
@@ -41,6 +52,15 @@ export const colores = {
   brilloVerde: 'rgba(108, 248, 187, 0.3)',
   brilloAzul: 'rgba(234, 237, 255, 0.8)',
 
+  // Fondos suaves de tarjetas y avisos
+  fondoVerde: '#ecfdf5',
+  fondoVerde2: '#f3fbf7',
+  fondoNaranja: '#fff4ec',
+  fondoNaranjaFuerte: '#ffe3d1',
+  fondoRojo: '#fff1f0',
+  fondoAmarillo: '#fff4d6',
+  bordeAmarillo: '#fbd77a',
+
   // Estados (chips)
   pagadoFondo: 'rgba(16, 185, 129, 0.12)',
   pagadoTexto: '#047857',
@@ -54,7 +74,65 @@ export const colores = {
 
   // Bandera de Honduras
   banderaAzul: '#0073cf',
-} as const;
+};
+
+export type Paleta = typeof paletaClara;
+
+const paletaOscura: Paleta = {
+  primario: '#4fd8a4',
+  relleno: '#00805a',
+  primarioContenedor: '#00855d',
+  sobrePrimario: '#ffffff',
+  secundarioContenedor: '#14402f',
+  sobreSecundarioContenedor: '#7ff0c3',
+  primarioClaro: '#68dba9',
+  menta: '#6cf8bb',
+
+  terciario: '#ffa66b',
+  terciarioRelleno: '#b24d00',
+  terciarioContenedor: '#c05400',
+  naranja: '#f97316',
+  error: '#ff8a8a',
+  errorContenedor: '#4a1f22',
+  rojo: '#ef4444',
+
+  fondo: '#0e1420',
+  superficie: '#171e2c',
+  superficieBaja: '#1d2536',
+  superficieMedia: '#273148',
+  superficieAlta: '#33405b',
+
+  texto: '#e8ecf5',
+  textoSecundario: '#a9b4c6',
+  placeholder: '#7d889c',
+  borde: '#3b475f',
+  bordeSuave: 'rgba(130, 145, 175, 0.3)',
+
+  brilloVerde: 'rgba(52, 184, 138, 0.16)',
+  brilloAzul: 'rgba(40, 52, 82, 0.8)',
+
+  fondoVerde: '#10261f',
+  fondoVerde2: '#112820',
+  fondoNaranja: '#2a1c12',
+  fondoNaranjaFuerte: '#43271a',
+  fondoRojo: '#2c1819',
+  fondoAmarillo: '#33290f',
+  bordeAmarillo: '#6b5a1f',
+
+  pagadoFondo: 'rgba(16, 185, 129, 0.16)',
+  pagadoTexto: '#4fd8a4',
+  pagadoBorde: 'rgba(16, 185, 129, 0.35)',
+  pendienteFondo: 'rgba(249, 115, 22, 0.16)',
+  pendienteTexto: '#ffa66b',
+  pendienteBorde: 'rgba(249, 115, 22, 0.35)',
+  atrasadoFondo: 'rgba(239, 68, 68, 0.16)',
+  atrasadoTexto: '#ff8a8a',
+  atrasadoBorde: 'rgba(239, 68, 68, 0.35)',
+
+  banderaAzul: '#0073cf',
+};
+
+export const colores = paletaClara; // compatibilidad: paleta clara por defecto
 
 export const espacio = {
   xs: 4,
@@ -118,6 +196,13 @@ export const sombras = {
   }) as ViewStyle,
 };
 
-export const tema = { colores, espacio, radio, tipografia, sombras };
-export type Tema = typeof tema;
+/** Construye el tema completo para el modo indicado. */
+export function crearTema(oscuro: boolean) {
+  return { colores: oscuro ? paletaOscura : paletaClara, espacio, radio, tipografia, sombras, oscuro };
+}
+
+export type Tema = ReturnType<typeof crearTema>;
+
+/** Tema claro por defecto (para código que no es un componente). En pantallas usa useTema(). */
+export const tema: Tema = crearTema(false);
 export default tema;

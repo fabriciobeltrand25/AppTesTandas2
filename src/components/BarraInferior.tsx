@@ -5,24 +5,25 @@
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { tema } from '../tema';
-import { useConfirmarSalida } from '../utils/useConfirmarSalida';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { Icono, NombreIcono } from './Icono';
 
-export type ClaveSeccion = 'inicio' | 'tandas' | 'calendario' | 'avisos' | 'perfil';
+export type ClaveSeccion = 'inicio' | 'tandas' | 'calendario' | 'avisos' | 'ajustes';
 
 const SECCIONES: { clave: ClaveSeccion; etiqueta: string; icono: NombreIcono; iconoActivo: NombreIcono }[] = [
   { clave: 'inicio', etiqueta: 'Inicio', icono: 'home-outline', iconoActivo: 'home' },
   { clave: 'tandas', etiqueta: 'Mis Tandas', icono: 'people-outline', iconoActivo: 'people' },
   { clave: 'calendario', etiqueta: 'Calendario', icono: 'calendar-outline', iconoActivo: 'calendar' },
   { clave: 'avisos', etiqueta: 'Avisos', icono: 'notifications-outline', iconoActivo: 'notifications' },
-  { clave: 'perfil', etiqueta: 'Perfil', icono: 'person-outline', iconoActivo: 'person' },
+  { clave: 'ajustes', etiqueta: 'Ajustes', icono: 'settings-outline', iconoActivo: 'settings' },
 ];
 
 export function BarraInferior({ activa }: { activa: ClaveSeccion }) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const confirmarSalida = useConfirmarSalida();
 
   const seleccionar = (clave: ClaveSeccion) => {
     if (clave === activa) return;
@@ -33,8 +34,14 @@ export function BarraInferior({ activa }: { activa: ClaveSeccion }) {
       case 'tandas':
         router.replace('/mis-tandas' as never);
         break;
-      case 'perfil':
-        confirmarSalida();
+      case 'calendario':
+        router.replace('/calendario' as never);
+        break;
+      case 'avisos':
+        router.replace('/avisos' as never);
+        break;
+      case 'ajustes':
+        router.replace('/configuracion' as never);
         break;
       default:
         Alert.alert(
@@ -71,7 +78,7 @@ export function BarraInferior({ activa }: { activa: ClaveSeccion }) {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   barra: {
     flexDirection: 'row',
     backgroundColor: tema.colores.superficie,

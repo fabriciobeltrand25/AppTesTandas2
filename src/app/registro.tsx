@@ -13,9 +13,12 @@ import { Logo } from '../components/Logo';
 import { PantallaAuth } from '../components/PantallaAuth';
 import { fuerzaPassword, registrar, type ErroresForm } from '../controllers/authController';
 import { useSesion } from '../context/SesionContext';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 
 export default function RegistroScreen() {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const router = useRouter();
   const { entrar } = useSesion();
 
@@ -84,11 +87,11 @@ export default function RegistroScreen() {
           error={errores.nombre}
         />
 
-        <CampoTelefono nota="Para avisos de turno" valor={telefono} onCambio={setTelefono} error={errores.telefono} />
+        <CampoTelefono nota="Con él inicias sesión" valor={telefono} onCambio={setTelefono} error={errores.telefono} />
 
         <CampoTexto
           etiqueta="Correo Electrónico (Opcional)"
-          nota="Para comprobantes"
+          nota="Opcional"
           icono="mail-outline"
           placeholder="carmen@correo.hn"
           value={correo}
@@ -166,7 +169,7 @@ export default function RegistroScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: tema.espacio.md },
   marca: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   marcaNombre: { ...tema.tipografia.encabezadoSm, fontWeight: '800', color: tema.colores.texto, lineHeight: 20 },

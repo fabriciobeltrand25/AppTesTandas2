@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { Icono } from './Icono';
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
 }
 
 export function Contador({ etiqueta, nota, valor, onCambio, min, max, unidad = 'participantes', error }: Props) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const puedeBajar = valor > min;
   const puedeSubir = valor < max;
   return (
@@ -49,7 +52,7 @@ export function Contador({ etiqueta, nota, valor, onCambio, min, max, unidad = '
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   contenedor: { marginBottom: tema.espacio.sm },
   filaEtiqueta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   etiqueta: { ...tema.tipografia.etiqueta, color: tema.colores.texto },

@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { Icono, NombreIcono } from './Icono';
 
 interface Props {
@@ -23,9 +24,11 @@ export function Boton({
   deshabilitado = false,
   estilo,
 }: Props) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const c = tema.colores;
   const esSecundario = variante === 'secundario';
-  const fondo = variante === 'urgente' ? c.naranja : esSecundario ? c.superficie : c.primario;
+  const fondo = variante === 'urgente' ? c.naranja : esSecundario ? c.superficie : c.relleno;
   const colorTexto = esSecundario ? c.primario : c.sobrePrimario;
   const inactivo = deshabilitado || cargando;
 
@@ -56,7 +59,7 @@ export function Boton({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   base: {
     minHeight: 52,
     borderRadius: tema.radio.input,

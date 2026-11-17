@@ -10,9 +10,12 @@ import { CampoTexto } from '../components/CampoTexto';
 import { Icono } from '../components/Icono';
 import { PantallaAuth } from '../components/PantallaAuth';
 import { restablecerPassword, verificarPin, type ErroresForm } from '../controllers/authController';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 
 export default function RecuperarScreen() {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const router = useRouter();
   const [fase, setFase] = useState<'verificar' | 'nueva'>('verificar');
   const [telefono, setTelefono] = useState('');
@@ -151,7 +154,7 @@ export default function RecuperarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   encabezadoTitulo: { ...tema.tipografia.etiquetaLg, fontSize: 16, color: tema.colores.texto },
   hero: { alignItems: 'center', marginVertical: tema.espacio.lg },
@@ -161,7 +164,7 @@ const styles = StyleSheet.create({
   },
   escudo: {
     position: 'absolute', right: -8, bottom: -8, width: 30, height: 30, borderRadius: 15,
-    backgroundColor: tema.colores.primario, borderWidth: 3, borderColor: tema.colores.fondo,
+    backgroundColor: tema.colores.relleno, borderWidth: 3, borderColor: tema.colores.fondo,
     justifyContent: 'center', alignItems: 'center',
   },
   titulo: { ...tema.tipografia.encabezadoLg, color: tema.colores.texto, marginTop: tema.espacio.md, textAlign: 'center' },

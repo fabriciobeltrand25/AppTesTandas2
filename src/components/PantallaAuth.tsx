@@ -1,31 +1,30 @@
 /** Contenedor común de login / registro / recuperar: fondo, teclado y scroll. */
 import { StatusBar } from 'expo-status-bar';
 import { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
+import { PantallaTeclado, ScrollTeclado } from './TecladoSeguro';
 
 export function PantallaAuth({ children, centrado = false }: { children: ReactNode; centrado?: boolean }) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   return (
     <SafeAreaView style={styles.raiz} edges={['top', 'bottom']}>
-      <StatusBar style="dark" />
+      <StatusBar style={tema.oscuro ? 'light' : 'dark'} />
       <View pointerEvents="none" style={styles.brilloArriba} />
       <View pointerEvents="none" style={styles.brilloMedio} />
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={[styles.contenido, centrado && styles.centrado]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+      <PantallaTeclado>
+        <ScrollTeclado contentContainerStyle={[styles.contenido, centrado && styles.centrado]}>
           <View style={styles.columna}>{children}</View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </ScrollTeclado>
+      </PantallaTeclado>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   raiz: { flex: 1, backgroundColor: tema.colores.fondo },
   contenido: { flexGrow: 1, alignItems: 'center', padding: tema.espacio.md },
   centrado: { justifyContent: 'center' },

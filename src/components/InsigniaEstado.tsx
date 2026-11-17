@@ -1,10 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { Icono } from './Icono';
 
 type Estado = 'activa' | 'pagado' | 'pendiente' | 'atrasado';
 
 export function InsigniaEstado({ estado, texto }: { estado: Estado; texto?: string }) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const c = tema.colores;
   const mapa = {
     activa: { fondo: c.pagadoFondo, color: c.pagadoTexto, borde: c.pagadoBorde, etiqueta: 'Activa' },
@@ -21,7 +24,7 @@ export function InsigniaEstado({ estado, texto }: { estado: Estado; texto?: stri
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   caja: {
     height: 26,
     flexDirection: 'row',

@@ -1,8 +1,11 @@
 import { StyleSheet, View } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { Icono } from './Icono';
 
 export function Logo({ tamano = 56 }: { tamano?: number }) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   return (
     <View
       style={[
@@ -15,9 +18,9 @@ export function Logo({ tamano = 56 }: { tamano?: number }) {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   caja: {
-    backgroundColor: tema.colores.primario,
+    backgroundColor: tema.colores.relleno,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -1,9 +1,10 @@
 /** Pantalla "Nueva Tanda" (ruta "/nueva-tanda"): configuración, participantes y turnos. */
 import { useRouter } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View,
+  Alert, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
+import { PantallaTeclado, ScrollTeclado } from '../components/TecladoSeguro';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Boton } from '../components/Boton';
 import { BotonCircular } from '../components/BotonCircular';
@@ -14,19 +15,26 @@ import { CampoTexto } from '../components/CampoTexto';
 import { Contador } from '../components/Contador';
 import { FilaParticipante } from '../components/FilaParticipante';
 import { Icono } from '../components/Icono';
+import { Segmentos } from '../components/Segmentos';
 import { SelectorFrecuencia } from '../components/SelectorFrecuencia';
+import { SelectorUsuarios } from '../components/SelectorUsuarios';
 import { useSesion } from '../context/SesionContext';
 import {
-  aNumero, calcularProyeccion, crearTanda, MAX_PARTICIPANTES, MIN_PARTICIPANTES,
-  sortear, validarParticipante, type ParticipanteForm,
+  aNumero, calcularProyeccion, crearTanda, listarOpcionesParticipantes, MAX_PARTICIPANTES, MIN_PARTICIPANTES,
+  sortear, validarParticipante, type OpcionParticipante, type ParticipanteForm,
 } from '../controllers/tandaController';
-import { tema } from '../tema';
+import { reprogramar } from '../controllers/notificacionController';
+import type { RecargoTipo } from '../models/tandaModel';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { hoyISO, sumarPeriodos, type Frecuencia } from '../utils/fechas';
 import { formatearLempiras, mesAnio } from '../utils/formato';
 
 type Modo = 'sorteo' | 'manual';
 
 export default function NuevaTandaScreen() {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const router = useRouter();
   const { usuario } = useSesion();
 
@@ -37,13 +45,43 @@ export default function NuevaTandaScreen() {
   const [cantidad, setCantidad] = useState(5);
 
   const [participantes, setParticipantes] = useState<ParticipanteForm[]>(() =>
-    usuario ? [{ nombre: usuario.nombre, telefono: usuario.telefono }] : []
+    usuario ? [{ nombre: usuario.nombre, telefono: usuario.telefono, usuarioId: usuario.id }] : []
   );
   const [modo, setModo] = useState<Modo>('sorteo');
   const [sorteado, setSorteado] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoTelefono, setNuevoTelefono] = useState('');
   const [errorNuevo, setErrorNuevo] = useState('');
+
+  // Recargo por atraso (opcional)
+  const [recargoTipo, setRecargoTipo] = useState<RecargoTipo>('ninguno');
+  const [recargoValor, setRecargoValor] = useState('');
+
+  // ComboBox: usuarios registrados + contactos de tus tandas anteriores (incluye los datos de ejemplo)
+  const [opciones, setOpciones] = useState<OpcionParticipante[]>([]);
+  const [listaAbierta, setListaAbierta] = useState(false);
+  const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (usuario) listarOpcionesParticipantes(usuario).then(setOpciones).catch(() => setOpciones([]));
+  }, [usuario]);
+
+  useEffect(
+    () => () => {
+      if (temporizador.current) clearTimeout(temporizador.current);
+    },
+    []
+  );
+
+  const abrirLista = () => {
+    if (temporizador.current) clearTimeout(temporizador.current);
+    setListaAbierta(true);
+  };
+  // Pequeña espera para que el toque sobre un usuario se registre antes de cerrar la lista
+  const cerrarListaConEspera = () => {
+    if (temporizador.current) clearTimeout(temporizador.current);
+    temporizador.current = setTimeout(() => setListaAbierta(false), 250);
+  };
 
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [guardando, setGuardando] = useState(false);
@@ -56,7 +94,6 @@ export default function NuevaTandaScreen() {
 
   if (!usuario) return null;
 
-  const telefonoAdmin = usuario.telefono;
   const completa = participantes.length >= cantidad;
   const mostrarTurno = modo === 'manual' || sorteado;
   const porcentajeCupos = Math.round((participantes.length / cantidad) * 100);
@@ -69,6 +106,28 @@ export default function NuevaTandaScreen() {
     setNuevoTelefono('');
     setErrorNuevo('');
     setSorteado(false);
+    setErrores((e) => ({ ...e, participantes: '' }));
+  };
+
+  /** Agrega directamente a un usuario registrado (rellena nombre y teléfono desde su cuenta). */
+  const agregarOpcion = (o: OpcionParticipante) => {
+    if (participantes.length >= cantidad) {
+      setErrorNuevo('Ya completaste los cupos. Aumenta el número de participantes para agregar más.');
+      setListaAbierta(false);
+      return;
+    }
+    // Nunca la misma persona dos veces: ni por teléfono ni por cuenta
+    if (participantes.some((p) => p.telefono === o.telefono || (o.usuarioId !== null && p.usuarioId === o.usuarioId))) {
+      setErrorNuevo('Esa persona ya está en la tanda.');
+      setListaAbierta(false);
+      return;
+    }
+    setParticipantes([...participantes, { nombre: o.nombre, telefono: o.telefono, usuarioId: o.usuarioId }]);
+    setNuevoNombre('');
+    setNuevoTelefono('');
+    setErrorNuevo('');
+    setSorteado(false);
+    setListaAbierta(false);
     setErrores((e) => ({ ...e, participantes: '' }));
   };
 
@@ -112,13 +171,17 @@ export default function NuevaTandaScreen() {
       const ordenFinal = modo === 'sorteo' && !sorteado ? sortear(participantes) : participantes;
       const r = await crearTanda(usuario, {
         nombre, cuota, frecuencia, fechaInicio, cantidad, participantes: ordenFinal,
+        recargoTipo, recargoValor,
       });
       if (r.ok) {
+        reprogramar(usuario);
         Alert.alert('¡Tanda creada!', 'El calendario de rondas ya fue generado.', [
           { text: 'Ver mis tandas', onPress: () => router.replace('/mis-tandas' as never) },
         ]);
       } else {
         setErrores(r.errores);
+        const aviso = r.errores.general || r.errores.frecuencia;
+        if (aviso) Alert.alert('No se pudo crear la tanda', aviso);
         if (r.errores.participantes) scrollRef.current?.scrollToEnd({ animated: true });
         else scrollRef.current?.scrollTo({ y: 0, animated: true });
       }
@@ -144,13 +207,8 @@ export default function NuevaTandaScreen() {
         <BotonCircular icono="help-circle-outline" etiqueta="Ayuda" />
       </View>
 
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          ref={scrollRef}
-          contentContainerStyle={styles.contenido}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+      <PantallaTeclado>
+        <ScrollTeclado ref={scrollRef} contentContainerStyle={styles.contenido}>
           {/* Banner */}
           <View style={styles.banner}>
             <View style={styles.bannerIcono}>
@@ -205,6 +263,46 @@ export default function NuevaTandaScreen() {
               max={MAX_PARTICIPANTES}
               error={errores.cantidad}
             />
+          </View>
+
+          {/* Recargo por atraso */}
+          <View style={[styles.tarjeta, tema.sombras.nivel1]}>
+            <View style={styles.tarjetaTitulo}>
+              <Icono name="alarm-outline" size={22} color={tema.colores.primario} />
+              <Text style={styles.tarjetaTexto}>Recargo por atraso</Text>
+              <Text style={styles.opcional}>Opcional</Text>
+            </View>
+            <Segmentos
+              opciones={[
+                { clave: 'ninguno', texto: 'Sin recargo' },
+                { clave: 'fijo', texto: 'Monto fijo' },
+                { clave: 'porcentaje', texto: 'Porcentaje' },
+              ]}
+              activa={recargoTipo}
+              onCambio={(t) => {
+                setRecargoTipo(t);
+                setRecargoValor('');
+                setErrores((e) => ({ ...e, recargo: '' }));
+              }}
+            />
+            {recargoTipo !== 'ninguno' && (
+              <View style={styles.recargoCampo}>
+                <CampoMonto
+                  etiqueta={recargoTipo === 'fijo' ? 'Recargo por cuota atrasada' : 'Porcentaje sobre la cuota'}
+                  valor={recargoValor}
+                  onCambio={setRecargoValor}
+                  prefijo={recargoTipo === 'fijo' ? 'L' : ''}
+                  sufijo={recargoTipo === 'fijo' ? 'HNL' : '%'}
+                  placeholder={recargoTipo === 'fijo' ? '50' : '5'}
+                  error={errores.recargo}
+                />
+              </View>
+            )}
+            <Text style={styles.recargoNota}>
+              {recargoTipo === 'ninguno'
+                ? 'No se cobrará nada extra a quien pague tarde.'
+                : 'Se cobra una vez por cada cuota que se pague después de la fecha de la ronda. Va aparte de la bolsa del beneficiario y el organizador puede perdonarlo al registrar el pago.'}
+            </Text>
           </View>
 
           {/* Resumen proyectado */}
@@ -293,7 +391,7 @@ export default function NuevaTandaScreen() {
                   indice={i}
                   nombre={p.nombre}
                   telefono={p.telefono}
-                  esAdmin={p.telefono === telefonoAdmin}
+                  esAdmin={p.usuarioId === usuario.id}
                   mostrarTurno={mostrarTurno}
                   fecha={mostrarTurno ? sumarPeriodos(fechaInicio, frecuencia, i) : undefined}
                   reordenable={modo === 'manual' && participantes.length > 1}
@@ -310,20 +408,43 @@ export default function NuevaTandaScreen() {
             {!completa ? (
               <View style={styles.agregar}>
                 <Text style={styles.agregarTitulo}>Agregar participante</Text>
+                <Text style={styles.agregarAyuda}>
+                  Toca un campo para elegir de las personas guardadas (usuarios registrados y contactos de tus tandas), o escribe los datos de alguien nuevo. El mismo teléfono no puede repetirse en una tanda.
+                </Text>
                 <CampoTexto
                   etiqueta="Nombre"
                   icono="person-outline"
                   placeholder="Elena Ramos"
                   value={nuevoNombre}
-                  onChangeText={setNuevoNombre}
+                  onChangeText={(t) => {
+                    setNuevoNombre(t);
+                    abrirLista();
+                  }}
+                  onFocus={abrirLista}
+                  onBlur={cerrarListaConEspera}
                   autoCapitalize="words"
                 />
                 <CampoTelefono
                   etiqueta="Teléfono"
                   valor={nuevoTelefono}
-                  onCambio={setNuevoTelefono}
+                  onCambio={(t) => {
+                    setNuevoTelefono(t);
+                    abrirLista();
+                  }}
+                  onEnfocar={abrirLista}
+                  onDesenfocar={cerrarListaConEspera}
                   error={errorNuevo || undefined}
                 />
+                {listaAbierta && (
+                  <SelectorUsuarios
+                    opciones={opciones}
+                    yaAgregados={participantes.map((p) => p.telefono)}
+                    cuentasAgregadas={participantes.map((p) => p.usuarioId).filter((id): id is number => typeof id === 'number')}
+                    filtro={nuevoNombre.trim() || nuevoTelefono}
+                    onElegir={agregarOpcion}
+                    onCerrar={() => setListaAbierta(false)}
+                  />
+                )}
                 <Boton
                   titulo="Agregar a la tanda"
                   iconoIzquierda="person-add-outline"
@@ -340,7 +461,7 @@ export default function NuevaTandaScreen() {
 
             {errores.participantes ? <Text style={styles.errorLista}>{errores.participantes}</Text> : null}
           </View>
-        </ScrollView>
+        </ScrollTeclado>
 
         <View style={styles.pie}>
           <Boton
@@ -350,7 +471,7 @@ export default function NuevaTandaScreen() {
             cargando={guardando}
           />
         </View>
-      </KeyboardAvoidingView>
+      </PantallaTeclado>
     </SafeAreaView>
   );
 }
@@ -365,6 +486,8 @@ function ModoBoton({
   texto: string;
   onPress: () => void;
 }) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   return (
     <Pressable onPress={onPress} style={[styles.modo, activo && styles.modoActivo]} accessibilityRole="radio">
       <Icono name={icono} size={18} color={activo ? tema.colores.primario : tema.colores.textoSecundario} />
@@ -373,7 +496,7 @@ function ModoBoton({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   flex: { flex: 1 },
   raiz: { flex: 1, backgroundColor: tema.colores.fondo },
   encabezado: {
@@ -405,7 +528,7 @@ const styles = StyleSheet.create({
   tarjetaTexto: { ...tema.tipografia.encabezadoSm, fontWeight: '800', color: tema.colores.texto },
   resumen: {
     padding: tema.espacio.md, borderRadius: tema.radio.tarjeta, gap: 12,
-    backgroundColor: '#ecfdf5', borderWidth: 1, borderColor: tema.colores.pagadoBorde,
+    backgroundColor: tema.colores.fondoVerde, borderWidth: 1, borderColor: tema.colores.pagadoBorde,
   },
   resumenCabecera: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   resumenTitulo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -441,6 +564,10 @@ const styles = StyleSheet.create({
     marginTop: tema.espacio.md, paddingTop: tema.espacio.md,
     borderTopWidth: 1, borderTopColor: tema.colores.superficieMedia,
   },
+  agregarAyuda: { ...tema.tipografia.cuerpoSm, color: tema.colores.textoSecundario, marginBottom: 10 },
+  opcional: { ...tema.tipografia.cuerpoSm, color: tema.colores.placeholder, marginLeft: 'auto' },
+  recargoCampo: { marginTop: tema.espacio.md },
+  recargoNota: { ...tema.tipografia.cuerpoSm, color: tema.colores.textoSecundario, marginTop: 4 },
   agregarTitulo: { ...tema.tipografia.etiquetaLg, color: tema.colores.texto, marginBottom: 10 },
   completo: { flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: tema.espacio.md },
   completoTexto: { ...tema.tipografia.etiquetaLg, color: tema.colores.primario },

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { fechaCorta, formatearTelefono } from '../utils/formato';
 import { Icono } from './Icono';
 
@@ -23,6 +24,8 @@ interface Props {
 }
 
 export function FilaParticipante(p: Props) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const c = tema.colores;
   const numero = String(p.indice + 1).padStart(2, '0');
   return (
@@ -75,18 +78,18 @@ export function FilaParticipante(p: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   flex: { flex: 1 },
   fila: {
     flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: tema.radio.tarjeta,
     backgroundColor: tema.colores.superficieBaja, borderWidth: 1, borderColor: tema.colores.bordeSuave,
   },
-  filaAdmin: { backgroundColor: '#f0f7f3', borderColor: tema.colores.pagadoBorde },
+  filaAdmin: { backgroundColor: tema.colores.fondoVerde2, borderColor: tema.colores.pagadoBorde },
   insignia: {
     width: 40, height: 40, borderRadius: 20, backgroundColor: tema.colores.superficieAlta,
     justifyContent: 'center', alignItems: 'center',
   },
-  insigniaAdmin: { backgroundColor: tema.colores.primario },
+  insigniaAdmin: { backgroundColor: tema.colores.relleno },
   insigniaTexto: { ...tema.tipografia.etiquetaLg, fontWeight: '800', color: tema.colores.textoSecundario },
   filaNombre: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nombre: { flexShrink: 1, ...tema.tipografia.etiquetaLg, fontSize: 15, color: tema.colores.texto },

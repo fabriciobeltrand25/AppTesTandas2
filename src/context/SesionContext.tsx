@@ -4,6 +4,7 @@
  */
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { cerrarSesion, restaurarSesion } from '../controllers/authController';
+import { sembrarSiHaceFalta } from '../controllers/seedController';
 import { obtenerDB } from '../database/db';
 import type { Usuario } from '../models/usuarioModel';
 
@@ -25,6 +26,12 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         await obtenerDB();
+        // Datos de ejemplo automáticos (solo la primera vez). Si falla, la app sigue funcionando.
+        try {
+          await sembrarSiHaceFalta();
+        } catch (e) {
+          console.warn('No se pudieron cargar los datos de ejemplo', e);
+        }
         setUsuario(await restaurarSesion());
       } catch (e) {
         console.warn('No se pudo iniciar la base de datos', e);

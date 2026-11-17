@@ -1,12 +1,15 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { TandaVista } from '../controllers/tandaController';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { etiquetaFrecuencia, fechaCorta, formatearLempiras, iniciales } from '../utils/formato';
 import { BarraProgreso } from './BarraProgreso';
 import { Icono } from './Icono';
 import { InsigniaEstado } from './InsigniaEstado';
 
 export function TarjetaTanda({ tanda, onPress }: { tanda: TandaVista; onPress?: () => void }) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const c = tema.colores;
   const ronda = tanda.rondaActual;
   const numeroRonda = ronda ? ronda.numero : tanda.totalRondas;
@@ -39,6 +42,13 @@ export function TarjetaTanda({ tanda, onPress }: { tanda: TandaVista; onPress?: 
             Cuota: <Text style={styles.cuotaMonto}>{formatearLempiras(tanda.cuota)}</Text> / {etiquetaFrecuencia(tanda.frecuencia)}
           </Text>
         </View>
+
+        {!tanda.esOrganizador && (
+          <View style={styles.rol}>
+            <Icono name="person-outline" size={13} color={c.textoSecundario} />
+            <Text style={styles.rolTexto}>Participas en esta tanda</Text>
+          </View>
+        )}
 
         <View style={styles.filaProgreso}>
           <Text style={styles.progresoEtiqueta}>Progreso de entregas</Text>
@@ -81,7 +91,7 @@ export function TarjetaTanda({ tanda, onPress }: { tanda: TandaVista; onPress?: 
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   flex: { flex: 1 },
   tarjeta: {
     backgroundColor: tema.colores.superficie,
@@ -95,13 +105,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
     marginTop: tema.espacio.md, marginLeft: tema.espacio.md,
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: tema.radio.pildora,
-    backgroundColor: '#fff4d6', borderWidth: 1, borderColor: '#fbd77a',
+    backgroundColor: tema.colores.fondoAmarillo, borderWidth: 1, borderColor: tema.colores.bordeAmarillo,
   },
   avisoTexto: { ...tema.tipografia.etiqueta, color: tema.colores.terciario },
   cuerpo: { padding: tema.espacio.md, gap: 10 },
   filaTitulo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
   titulo: { flex: 1, ...tema.tipografia.encabezadoSm, fontWeight: '800', color: tema.colores.texto },
   filaCuota: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  rol: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start',
+    paddingHorizontal: 10, paddingVertical: 3, borderRadius: tema.radio.pildora, backgroundColor: tema.colores.superficieMedia,
+  },
+  rolTexto: { ...tema.tipografia.etiquetaSm, color: tema.colores.textoSecundario },
   cuota: { ...tema.tipografia.cuerpo, color: tema.colores.textoSecundario },
   cuotaMonto: { fontWeight: '700', color: tema.colores.texto },
   filaProgreso: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
@@ -112,7 +127,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: tema.espacio.md, paddingVertical: 12,
     borderTopWidth: 1, borderTopColor: tema.colores.superficieMedia,
   },
-  pieDestacado: { backgroundColor: '#f0f7f3', borderTopWidth: 0 },
+  pieDestacado: { backgroundColor: tema.colores.fondoVerde2, borderTopWidth: 0 },
   avatar: {
     width: 40, height: 40, borderRadius: 20, backgroundColor: tema.colores.superficieAlta,
     justifyContent: 'center', alignItems: 'center',

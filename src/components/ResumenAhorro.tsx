@@ -2,32 +2,42 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
 import type { ProximoCobro } from '../controllers/tandaController';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { fechaLarga, formatearLempiras } from '../utils/formato';
 import { Boton } from './Boton';
 import { Icono } from './Icono';
 
 interface Props {
+  /** Ahorro real = cuotas pagadas + rondas ganadas */
   total: number;
+  /** Cuotas que la cuenta ha pagado */
+  pagado: number;
+  /** Lo que la cuenta ya cobró en rondas cerradas */
+  totalCobrado: number;
   tandasActivas: number;
   proximoCobro: ProximoCobro | null;
   onEstadisticas: () => void;
   onCompartir: () => void;
 }
 
-export function ResumenAhorro({ total, tandasActivas, proximoCobro, onEstadisticas, onCompartir }: Props) {
+export function ResumenAhorro({
+  total, pagado, totalCobrado, tandasActivas, proximoCobro, onEstadisticas, onCompartir,
+}: Props) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const c = tema.colores;
   return (
     <LinearGradient
-      colors={[c.primario, c.primarioContenedor]}
+      colors={[c.relleno, c.primarioContenedor]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.tarjeta, tema.sombras.nivel2]}
     >
       <View style={styles.filaSuperior}>
         <View style={styles.etiquetaTotal}>
-          <Icono name="wallet-outline" size={16} color={c.secundarioContenedor} />
-          <Text style={styles.etiquetaTexto}>TOTAL RECOLECTADO EN CURSO</Text>
+          <Icono name="wallet-outline" size={16} color={c.menta} />
+          <Text style={styles.etiquetaTexto}>TOTAL AHORRADO</Text>
         </View>
         <View style={styles.chip}>
           <Text style={styles.chipTexto}>
@@ -40,7 +50,15 @@ export function ResumenAhorro({ total, tandasActivas, proximoCobro, onEstadistic
         <Text style={styles.monto}>{formatearLempiras(total)}</Text>
         <Text style={styles.moneda}>HNL</Text>
       </View>
-      <Text style={styles.subtexto}>Suma de los pagos registrados en tus tandas</Text>
+      <Text style={styles.subtexto}>Cuotas que pagaste + rondas que cobraste</Text>
+      {total > 0 && (
+        <View style={styles.cobrado}>
+          <Icono name="swap-vertical-outline" size={16} color={c.menta} />
+          <Text style={styles.cobradoTexto}>
+            Pagado {formatearLempiras(pagado)} • Cobrado {formatearLempiras(totalCobrado)}
+          </Text>
+        </View>
+      )}
 
       {proximoCobro ? (
         <View style={styles.cobro}>
@@ -77,12 +95,12 @@ export function ResumenAhorro({ total, tandasActivas, proximoCobro, onEstadistic
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   flex: { flex: 1 },
   tarjeta: { borderRadius: 24, padding: tema.espacio.lg },
   filaSuperior: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
   etiquetaTotal: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  etiquetaTexto: { ...tema.tipografia.etiqueta, color: tema.colores.secundarioContenedor, flexShrink: 1 },
+  etiquetaTexto: { ...tema.tipografia.etiqueta, color: tema.colores.menta, flexShrink: 1 },
   chip: {
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: tema.radio.pildora,
     backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
@@ -92,6 +110,11 @@ const styles = StyleSheet.create({
   monto: { ...tema.tipografia.moneda, color: '#ffffff' },
   moneda: { ...tema.tipografia.etiquetaLg, color: 'rgba(255,255,255,0.8)' },
   subtexto: { ...tema.tipografia.cuerpoSm, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  cobrado: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 10,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: tema.radio.pildora, backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  cobradoTexto: { ...tema.tipografia.etiqueta, color: '#ffffff' },
   cobro: {
     flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: tema.espacio.md,
     padding: 12, borderRadius: tema.radio.tarjeta,
@@ -101,7 +124,7 @@ const styles = StyleSheet.create({
     width: 42, height: 42, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center', alignItems: 'center',
   },
-  cobroEtiqueta: { ...tema.tipografia.etiquetaSm, color: tema.colores.secundarioContenedor },
+  cobroEtiqueta: { ...tema.tipografia.etiquetaSm, color: tema.colores.menta },
   cobroFecha: { ...tema.tipografia.encabezadoSm, color: '#ffffff' },
   cobroDerecha: { alignItems: 'flex-end' },
   cobroMonto: { ...tema.tipografia.etiquetaLg, fontWeight: '800', color: '#ffffff' },

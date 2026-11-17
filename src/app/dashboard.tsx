@@ -1,6 +1,6 @@
 /** Pantalla principal del cliente (ruta "/dashboard"). */
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarraInferior } from '../components/BarraInferior';
@@ -14,24 +14,53 @@ import {
   sembrarDatosDemo,
   type ResumenDashboard,
 } from '../controllers/tandaController';
-import { tema } from '../tema';
+import {
+  debePreguntar, guardarActivadas, marcarPreguntado, pedirPermiso, reprogramar,
+} from '../controllers/notificacionController';
+import { generarReporteGeneral } from '../controllers/reporteController';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
+import { compartirReporte } from '../utils/reportes';
 import { iniciales, primerNombre } from '../utils/formato';
-import { useConfirmarSalida } from '../utils/useConfirmarSalida';
-
-const proximamente = (nombre: string) =>
-  Alert.alert(nombre, 'Esta pantalla estará disponible muy pronto.');
 
 export default function DashboardScreen() {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const router = useRouter();
   const { usuario } = useSesion();
-  const confirmarSalida = useConfirmarSalida();
   const [datos, setDatos] = useState<ResumenDashboard | null>(null);
   const [refrescando, setRefrescando] = useState(false);
 
   const cargar = useCallback(async () => {
     if (!usuario) return;
     setDatos(await obtenerResumenDashboard(usuario));
+    reprogramar(usuario); // mantiene al día los recordatorios locales
   }, [usuario]);
+
+  // Primera vez: preguntar si quiere recibir recordatorios
+  useEffect(() => {
+    (async () => {
+      if (!usuario || !(await debePreguntar())) return;
+      await marcarPreguntado();
+      Alert.alert(
+        'Recordatorios',
+        '¿Quieres recibir avisos antes de cada ronda y cuando te toque cobrar?',
+        [
+          { text: 'Ahora no', style: 'cancel', onPress: () => guardarActivadas(false) },
+          {
+            text: 'Activar',
+            onPress: async () => {
+              await guardarActivadas(true);
+              if (await pedirPermiso()) await reprogramar(usuario);
+            },
+          },
+        ]
+      );
+    })();
+  }, [usuario]);
+
+  const compartir = () =>
+    compartirReporte(() => generarReporteGeneral(usuario!), 'Resumen de mis tandas');
 
   // Recarga cada vez que la pantalla vuelve a estar visible
   useFocusEffect(
@@ -62,14 +91,14 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.raiz} edges={['top']}>
       {/* Encabezado */}
       <View style={styles.encabezado}>
-        <Pressable onPress={confirmarSalida} style={styles.avatar} accessibilityLabel="Cuenta y cierre de sesión">
+        <Pressable onPress={() => router.replace('/perfil' as never)} style={styles.avatar} accessibilityLabel="Mi perfil">
           <Text style={styles.avatarTexto}>{iniciales(usuario.nombre)}</Text>
         </Pressable>
         <View style={styles.flex}>
           <Text style={styles.bienvenida}>Bienvenido de nuevo</Text>
           <Text style={styles.saludo} numberOfLines={1}>¡Hola, {primerNombre(usuario.nombre)}!</Text>
         </View>
-        <Pressable onPress={() => proximamente('Avisos')} hitSlop={10} accessibilityLabel="Notificaciones">
+        <Pressable onPress={() => router.replace('/avisos' as never)} hitSlop={10} accessibilityLabel="Notificaciones">
           <Icono name="notifications-outline" size={26} color={tema.colores.texto} />
         </Pressable>
       </View>
@@ -81,11 +110,13 @@ export default function DashboardScreen() {
           refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} tintColor={tema.colores.primario} />}
         >
           <ResumenAhorro
-            total={datos?.totalRecolectado ?? 0}
+            total={datos?.ahorro.total ?? 0}
+            pagado={datos?.ahorro.pagado ?? 0}
+            totalCobrado={datos?.ahorro.ganado ?? 0}
             tandasActivas={tandas.filter((t) => t.estado === 'activa').length}
             proximoCobro={datos?.proximoCobro ?? null}
-            onEstadisticas={() => proximamente('Estadísticas')}
-            onCompartir={() => proximamente('Compartir')}
+            onEstadisticas={() => router.push('/estadisticas' as never)}
+            onCompartir={compartir}
           />
 
           <View style={styles.tituloSeccion}>
@@ -121,7 +152,13 @@ export default function DashboardScreen() {
           ) : (
             <View style={styles.lista}>
               {tandas.map((t) => (
-                <TarjetaTanda key={t.id} tanda={t} onPress={() => proximamente(t.nombre)} />
+                <TarjetaTanda
+                  key={t.id}
+                  tanda={t}
+                  onPress={() =>
+                    router.push({ pathname: '/calendario', params: { tandaId: String(t.id) } } as never)
+                  }
+                />
               ))}
             </View>
           )}
@@ -154,7 +191,7 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   flex: { flex: 1 },
   raiz: { flex: 1, backgroundColor: tema.colores.fondo },
   encabezado: {
@@ -205,7 +242,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute', right: tema.espacio.md, bottom: tema.espacio.md,
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    height: 56, paddingHorizontal: 22, borderRadius: 28, backgroundColor: tema.colores.primario,
+    height: 56, paddingHorizontal: 22, borderRadius: 28, backgroundColor: tema.colores.relleno,
   },
   fabTexto: { ...tema.tipografia.cuerpoLg, fontWeight: '800', color: '#ffffff' },
 });

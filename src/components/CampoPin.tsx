@@ -4,7 +4,8 @@
  */
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { soloDigitos } from '../utils/formato';
 
 interface Props {
@@ -17,6 +18,8 @@ interface Props {
 }
 
 export function CampoPin({ valor, onCambio, longitud = 4, oculto = true, error }: Props) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const [enfocado, setEnfocado] = useState(false);
   const c = tema.colores;
 
@@ -58,7 +61,7 @@ export function CampoPin({ valor, onCambio, longitud = 4, oculto = true, error }
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   fila: { flexDirection: 'row', justifyContent: 'space-between', gap: tema.espacio.sm },
   casilla: {
     flex: 1,
@@ -71,7 +74,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  casillaLlena: { borderColor: tema.colores.primario, backgroundColor: '#ecfdf5' },
+  casillaLlena: { borderColor: tema.colores.primario, backgroundColor: tema.colores.fondoVerde },
   casillaActiva: { borderStyle: 'dashed', borderColor: tema.colores.primario, backgroundColor: tema.colores.superficieBaja },
   digito: { fontSize: 24, fontWeight: '800', color: tema.colores.primario },
   invisible: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0 },

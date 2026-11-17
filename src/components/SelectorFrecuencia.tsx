@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos } from '../context/TemaContext';
 import type { Frecuencia } from '../utils/fechas';
 import { Icono } from './Icono';
 
@@ -18,6 +19,7 @@ export function SelectorFrecuencia({
   valor: Frecuencia;
   onCambio: (f: Frecuencia) => void;
 }) {
+  const styles = useEstilos(crearEstilos);
   return (
     <View style={styles.contenedor}>
       <Text style={styles.etiqueta}>{etiqueta}</Text>
@@ -42,7 +44,7 @@ export function SelectorFrecuencia({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   contenedor: { marginBottom: tema.espacio.md },
   etiqueta: { ...tema.tipografia.etiqueta, color: tema.colores.texto, marginBottom: 6 },
   fila: { flexDirection: 'row', gap: tema.espacio.sm },
@@ -50,7 +52,7 @@ const styles = StyleSheet.create({
     flex: 1, height: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
     borderRadius: tema.radio.input, borderWidth: 1, borderColor: tema.colores.borde, backgroundColor: tema.colores.superficie,
   },
-  opcionActiva: { backgroundColor: tema.colores.primario, borderColor: tema.colores.primario },
+  opcionActiva: { backgroundColor: tema.colores.relleno, borderColor: tema.colores.primario },
   texto: { ...tema.tipografia.etiquetaLg, color: tema.colores.texto },
   textoActivo: { color: '#ffffff', fontWeight: '800' },
 });

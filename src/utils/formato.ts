@@ -69,3 +69,21 @@ export function mesAnio(iso: string): string {
   const [y, m] = iso.split('-').map(Number);
   return `${MESES_LARGOS[m - 1]} ${y}`;
 }
+
+/** 500 -> "L 500.00" (siempre con centavos, para recibos y botones de pago) */
+export function formatearLempirasExacto(valor: number): string {
+  const redondeado = Math.round(valor * 100) / 100;
+  const [entera, decimal] = redondeado.toFixed(2).split('.');
+  return `L ${entera.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${decimal}`;
+}
+
+/** "2026-09-01" -> "01 Sep 2026" */
+export function fechaDMA(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${String(d).padStart(2, '0')} ${MESES_CORTOS[m - 1]} ${y}`;
+}
+
+/** Redondea dinero a 2 decimales (evita 0.1 + 0.2 = 0.30000000000000004). */
+export function redondear2(valor: number): number {
+  return Math.round((valor + Number.EPSILON) * 100) / 100;
+}

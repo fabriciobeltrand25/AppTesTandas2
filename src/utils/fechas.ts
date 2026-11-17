@@ -59,3 +59,17 @@ export function desdeISOLocal(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
+
+/** Días de diferencia entre dos fechas ISO (positivo si "hasta" es posterior). */
+export function diferenciaDias(desde: string, hasta: string): number {
+  return Math.round((desdeISO(hasta).getTime() - desdeISO(desde).getTime()) / 86400000);
+}
+
+/** true si el texto es una fecha real en formato YYYY-MM-DD (rechaza 2026-13-45, 0000-00-00, etc.). */
+export function esFechaISOValida(texto: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) return false;
+  const [y, m, d] = texto.split('-').map(Number);
+  if (y < 2000 || y > 2100) return false;
+  const f = new Date(Date.UTC(y, m - 1, d));
+  return f.getUTCFullYear() === y && f.getUTCMonth() === m - 1 && f.getUTCDate() === d;
+}

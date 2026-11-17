@@ -1,6 +1,7 @@
 import { ReactNode, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { Icono, NombreIcono } from './Icono';
 
 interface Props extends Omit<TextInputProps, 'style'> {
@@ -16,6 +17,8 @@ interface Props extends Omit<TextInputProps, 'style'> {
 }
 
 export function CampoTexto({ etiqueta, nota, icono, error, esPassword, derecha, ...resto }: Props) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const [enfocado, setEnfocado] = useState(false);
   const [visible, setVisible] = useState(false);
   const c = tema.colores;
@@ -58,7 +61,7 @@ export function CampoTexto({ etiqueta, nota, icono, error, esPassword, derecha, 
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   contenedor: { marginBottom: tema.espacio.md },
   filaEtiqueta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   etiqueta: { ...tema.tipografia.etiqueta, color: tema.colores.texto },

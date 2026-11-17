@@ -1,7 +1,7 @@
 /** Lista de todas las tandas del usuario (ruta "/mis-tandas"). */
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarraInferior } from '../components/BarraInferior';
 import { Boton } from '../components/Boton';
@@ -9,9 +9,12 @@ import { Icono } from '../components/Icono';
 import { TarjetaTanda } from '../components/TarjetaTanda';
 import { useSesion } from '../context/SesionContext';
 import { obtenerResumenDashboard, type TandaVista } from '../controllers/tandaController';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 
 export default function MisTandasScreen() {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const router = useRouter();
   const { usuario } = useSesion();
   const [tandas, setTandas] = useState<TandaVista[] | null>(null);
@@ -72,7 +75,9 @@ export default function MisTandasScreen() {
             <TarjetaTanda
               key={t.id}
               tanda={t}
-              onPress={() => Alert.alert(t.nombre, 'El detalle de la ronda estará disponible muy pronto.')}
+              onPress={() =>
+                router.push({ pathname: '/calendario', params: { tandaId: String(t.id) } } as never)
+              }
             />
           ))
         )}
@@ -83,7 +88,7 @@ export default function MisTandasScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   flex: { flex: 1 },
   raiz: { flex: 1, backgroundColor: tema.colores.fondo },
   encabezado: {
@@ -94,7 +99,7 @@ const styles = StyleSheet.create({
   titulo: { ...tema.tipografia.encabezadoLg, color: tema.colores.texto },
   subtitulo: { ...tema.tipografia.cuerpoSm, color: tema.colores.textoSecundario },
   agregar: {
-    width: 46, height: 46, borderRadius: 23, backgroundColor: tema.colores.primario,
+    width: 46, height: 46, borderRadius: 23, backgroundColor: tema.colores.relleno,
     justifyContent: 'center', alignItems: 'center',
   },
   contenido: { padding: tema.espacio.md, gap: tema.espacio.md, paddingBottom: tema.espacio.xl },

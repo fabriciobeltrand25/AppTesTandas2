@@ -10,9 +10,12 @@ import { Logo } from '../components/Logo';
 import { PantallaAuth } from '../components/PantallaAuth';
 import { iniciarSesion, type ErroresForm } from '../controllers/authController';
 import { useSesion } from '../context/SesionContext';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 
 export default function LoginScreen() {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const router = useRouter();
   const { entrar } = useSesion();
   const [telefono, setTelefono] = useState('');
@@ -95,7 +98,7 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   marca: { alignItems: 'center', marginBottom: tema.espacio.md },
   logoExterior: {
     width: 80, height: 80, borderRadius: 22, justifyContent: 'center', alignItems: 'center',

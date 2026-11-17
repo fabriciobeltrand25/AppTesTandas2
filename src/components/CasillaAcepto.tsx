@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { Icono } from './Icono';
 
 export function CasillaAcepto({
@@ -14,6 +15,8 @@ export function CasillaAcepto({
   children: ReactNode;
   error?: string;
 }) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   return (
     <View>
       <Pressable
@@ -34,7 +37,7 @@ export function CasillaAcepto({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   fila: { flexDirection: 'row', alignItems: 'center', gap: tema.espacio.sm },
   texto: { flex: 1, ...tema.tipografia.cuerpo, color: tema.colores.textoSecundario },
   error: { ...tema.tipografia.cuerpoSm, color: tema.colores.error, marginTop: 4 },

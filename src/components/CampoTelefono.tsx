@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { formatearTelefono, soloDigitos } from '../utils/formato';
 import { BanderaHN } from './BanderaHN';
 import { Icono } from './Icono';
@@ -12,9 +13,15 @@ interface Props {
   valor: string;
   onCambio: (digitos: string) => void;
   error?: string;
+  onEnfocar?: () => void;
+  onDesenfocar?: () => void;
 }
 
-export function CampoTelefono({ etiqueta = 'Número de Teléfono', nota, valor, onCambio, error }: Props) {
+export function CampoTelefono({
+  etiqueta = 'Número de Teléfono', nota, valor, onCambio, error, onEnfocar, onDesenfocar,
+}: Props) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   const [enfocado, setEnfocado] = useState(false);
   const c = tema.colores;
   const colorBorde = error ? c.error : enfocado ? c.primario : c.borde;
@@ -42,8 +49,14 @@ export function CampoTelefono({ etiqueta = 'Número de Teléfono', nota, valor, 
             maxLength={9}
             value={formatearTelefono(valor)}
             onChangeText={(t) => onCambio(soloDigitos(t).slice(0, 8))}
-            onFocus={() => setEnfocado(true)}
-            onBlur={() => setEnfocado(false)}
+            onFocus={() => {
+              setEnfocado(true);
+              onEnfocar?.();
+            }}
+            onBlur={() => {
+              setEnfocado(false);
+              onDesenfocar?.();
+            }}
           />
         </View>
       </View>
@@ -53,7 +66,7 @@ export function CampoTelefono({ etiqueta = 'Número de Teléfono', nota, valor, 
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   contenedor: { marginBottom: tema.espacio.md },
   filaEtiqueta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   etiqueta: { ...tema.tipografia.etiqueta, color: tema.colores.texto },

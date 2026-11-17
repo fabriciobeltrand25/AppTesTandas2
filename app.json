@@ -11,35 +11,44 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.antony1_romer0.TandasApptes"
     },
-    "web": {
-      "output": "server",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
-        }
-      ],
-      "expo-sqlite",
-      "expo-secure-store",
-      "@react-native-community/datetimepicker"
+    "predictiveBackGestureEnabled": false,
+    "package": "com.antony1_romer0.TandasApptes"
+  },
+  "web": {
+    "output": "server",
+    "favicon": "./assets/images/favicon.png"
+  },
+  "plugins": [
+    "expo-router",
+    [
+      "expo-splash-screen",
+      {
+        "backgroundColor": "#208AEF",
+        "image": "./assets/images/splash-icon.png",
+        "imageWidth": 76
+      }
     ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    }
+    "expo-sqlite",
+    "expo-secure-store",
+    "@react-native-community/datetimepicker",
+    "expo-image",
+    "expo-web-browser",
+    "expo-font",
+    "expo-status-bar",
+    "expo-sharing"
+  ],
+  "experiments": {
+    "typedRoutes": true,
+    "reactCompiler": true
   }
 }

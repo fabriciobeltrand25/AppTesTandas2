@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet } from 'react-native';
-import { tema } from '../tema';
+import type { Tema } from '../tema';
+import { useEstilos, useTema } from '../context/TemaContext';
 import { Icono, NombreIcono } from './Icono';
 
 export function BotonCircular({
@@ -11,6 +12,8 @@ export function BotonCircular({
   onPress?: () => void;
   etiqueta: string;
 }) {
+  const tema = useTema();
+  const styles = useEstilos(crearEstilos);
   return (
     <Pressable
       onPress={onPress}
@@ -24,7 +27,7 @@ export function BotonCircular({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (tema: Tema) => StyleSheet.create({
   caja: {
     width: 44,
     height: 44,
