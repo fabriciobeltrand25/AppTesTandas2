@@ -21,34 +21,37 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.antony1_romer0.TandasApptes"
     },
-    "predictiveBackGestureEnabled": false,
-    "package": "com.antony1_romer0.TandasApptes"
-  },
-  "web": {
-    "output": "server",
-    "favicon": "./assets/images/favicon.png"
-  },
-  "plugins": [
-    "expo-router",
-    [
-      "expo-splash-screen",
-      {
-        "backgroundColor": "#208AEF",
-        "image": "./assets/images/splash-icon.png",
-        "imageWidth": 76
-      }
+    "web": {
+      "output": "server",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#208AEF",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ],
+      "expo-sqlite",
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
+      "expo-image",
+      "expo-web-browser",
+      "expo-font",
+      "expo-status-bar",
+      "expo-sharing"
     ],
-    "expo-sqlite",
-    "expo-secure-store",
-    "@react-native-community/datetimepicker",
-    "expo-image",
-    "expo-web-browser",
-    "expo-font",
-    "expo-status-bar",
-    "expo-sharing"
-  ],
-  "experiments": {
-    "typedRoutes": true,
-    "reactCompiler": true
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bf9b3ef1-e908-4e7e-a74f-19cadeaef066"
+      }
+    }
   }
 }

@@ -30,21 +30,20 @@ export interface ContactoPrueba {
 }
 
 /** El PRIMER contacto es el administrador de pruebas: organiza las 3 tandas y participa en todas. */
-/** aqui son de prueva recuerda que nos falta el correo asi que inventate unos y me los das tambien obvio*/
 export const CONTACTOS_PRUEBA: ContactoPrueba[] = [
-  { nombre: 'David Orellana',    telefono: '87376502' }, // 1[cite: 10]
-  { nombre: 'Susan Aguilar',     telefono: '33375578' }, // 2[cite: 10]
-  { nombre: 'Erick Bonilla',     telefono: '97534905' }, // 3[cite: 10]
-  { nombre: 'Manuel Castro',     telefono: '96962937' }, // 4[cite: 10]
-  { nombre: 'Luis',              telefono: '32973205' }, // 5[cite: 10]
-  { nombre: 'Yasmin',            telefono: '92287202' }, // 6[cite: 10]
-  { nombre: 'Bianca Romero',     telefono: '32253054' }, // 7[cite: 10]
-  { nombre: 'besy xiomara',      telefono: '33401727' }, // 8[cite: 10]
-  { nombre: 'Jony Osorio',       telefono: '87354444' }, // 9[cite: 10]
-  { nombre: 'Valesca Aguilar',   telefono: '95734232' }, // 10[cite: 10]
-  { nombre: 'Cristofer',         telefono: '95924438' }, // 11[cite: 10]
-  { nombre: 'Pamela Beltrán',    telefono: '33641148' }, // 12[cite: 10]
-  { nombre: 'Valeria Aguilar',   telefono: '93688804' }, // 13[cite: 10]
-  { nombre: 'Antonio Romero Ap', telefono: '88301006' }, // 14[cite: 10]
-  { nombre: 'Bryan Mijo HM',     telefono: '33406103' }, // 15[cite: 10]
+  { nombre: 'Carlos Pérez',   telefono: 'PENDIENTE' }, // 1 · organizador
+  { nombre: 'Miriam Flores',  telefono: 'PENDIENTE' }, // 2
+  { nombre: 'Ana Mejía',      telefono: 'PENDIENTE' }, // 3
+  { nombre: 'Luis Ordóñez',   telefono: 'PENDIENTE' }, // 4
+  { nombre: 'Karla Reyes',    telefono: 'PENDIENTE' }, // 5
+  { nombre: 'José Martínez',  telefono: 'PENDIENTE' }, // 6
+  { nombre: 'Sofía Cárcamo',  telefono: 'PENDIENTE' }, // 7
+  { nombre: 'Daniel Zelaya',  telefono: 'PENDIENTE' }, // 8
+  { nombre: 'Gloria Núñez',   telefono: 'PENDIENTE' }, // 9
+  { nombre: 'Pedro Aguilar',  telefono: 'PENDIENTE' }, // 10
+  { nombre: 'Rosa Lagos',     telefono: 'PENDIENTE' }, // 11
+  { nombre: 'Marvin Castro',  telefono: 'PENDIENTE' }, // 12
+  { nombre: 'Elena Rivera',   telefono: 'PENDIENTE' }, // 13
+  { nombre: 'Héctor Banegas', telefono: 'PENDIENTE' }, // 14
+  { nombre: 'Lidia Paz',      telefono: 'PENDIENTE' }, // 15
 ];
